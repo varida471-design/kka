@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CinePicks | Rekomendasi Film Kelompok KKA</title>
+    <style>
+        /* --- UI/UX DESIGN (CSS) --- */
+        :root {
+            --bg-color: #141414;
+            --card-bg: #1f1f1f;
+            --accent-color: #e50914; /* Merah Netflix */
+            --text-color: #ffffff;
+            --text-muted: #aaaaaa;
+            --star-color: #f5c518; /* Kuning IMDb */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 50px;
+        }
+
+        /* Navbar Sticky */
+        header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(20, 20, 20, 0.95);
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid #2cf2c2c;
+            backdrop-filter: blur(5px);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+        }
+
+        /* Search Bar di Navbar */
+        .search-container {
+            width: 40%;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #444;
+            background-color: #222;
+            color: #fff;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .search-container input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px rgba(229, 9, 20, 0.5);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 60px 6% 20px 6%;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        /* Filter Buttons (UX Interaktif) */
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background-color: var(--card-bg);
+            color: white;
+            border: 1px solid #444;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Movie Grid Layout */
+        .main-content {
+            padding: 0 6%;
+        }
+
+        .section-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 10px;
+        }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+        }
+
+        /* Movie Card UI & Hover Effect */
+        .movie-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background-color: #333; /* Fallback jika gambar mati */
+        }
+
+        .movie-info {
+            padding: 15px;
+        }
+
+        .movie-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .movie-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .rating {
+            color: var(--star-color);
+            font-weight: bold;
+        }
+
+        /* MODAL DETAIL FILM (UX Pop-up) */
+        .modal {
+            display: none; 
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: #1a1a1a;
+            max-width: 700px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.8);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); }
+            to { transform: translateY(0); }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 30px;
+            color: white;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-poster {
+            width: 40%;
+            object-fit: cover;
+        }
+
+        .modal-body {
+            padding: 30px;
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .modal-body h2 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .modal-genre {
+            display: inline-block;
+            background-color: #333;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-bottom: 15px;
+            color: var(--text-muted);
+        }
+
+        .modal-synopsis {
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        /* Responsif untuk HP */
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 15px; }
+            .search-container { width: 100%; }
+            .modal-content { flex-direction: column; }
+            .modal-poster { width: 100%; height: 250px; }
+            .modal-body { width: 100%; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">CinePicks</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Cari film berdasarkan judul atau genre..." onkeyup="cariFilm()">
+        </div>
+    </header>
+
+    <section class="hero">
+        <h1>Temukan Film Favorit Anda</h1>
+        <p>Sistem rekomendasi instan berdasarkan genre pilihan kelompok kami.</p>
+        
+        <div class="filter-container">
+            <button class="filter-btn active" onclick="filterGenre('Semua', this)">Semua</button>
+            <button class="filter-btn" onclick="filterGenre('Action', this)">Action</button>
+            <button class="filter-btn" onclick="filterGenre('Sci-Fi', this)">Sci-Fi</button>
+            <button class="filter-btn" onclick="filterGenre('Drama', this)">Drama</button>
+            <button class="filter-btn" onclick="filterGenre('Horor', this)">Horor</button>
+        </div>
+    </section>
+
+    <main class="main-content">
+        <h2 class="section-title" id="gridTitle">Rekomendasi Film Terpopuler</h2>
+        <div class="movie-grid" id="movieGrid">
+            </div>
+    </main>
+
+    <div class="modal" id="movieModal" onclick="tutupModal(event)">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('movieModal').classList.remove('show')">&times;</span>
+            <img src="" alt="Poster" class="modal-poster" id="modalPoster">
+            <div class="modal-body">
+                <h2 id="modalTitle">Judul Film</h2>
+                <div><span class="modal-genre" id="modalGenre">Genre</span></div>
+                <p class="modal-synopsis" id="modalSynopsis">Sinopsis film di sini...</p>
+                <div class="rating" id="modalRating">⭐ 0.0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Data Mock Kumpulan Film (Array of Objects)
+        const KUMPULAN_FILM = [
+            { id: 1, judul: "Inception", genre: "Sci-Fi", rating: 8.8, poster: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400", sinopsis: "Seorang pencuri yang mencuri rahasia perusahaan melalui penggunaan teknologi berbagi mimpi, diberikan tugas sebaliknya: menanamkan ide ke dalam pikiran seorang CEO." },
+            { id: 2, judul: "The Dark Knight", genre: "Action", rating: 9.0, poster: "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=400", sinopsis: "Ketika ancaman yang dikenal sebagai Joker merusak ketenangan kota Gotham, Batman harus menerima salah satu tes psikologis dan fisik terbesar untuk melawan ketidakadilan." },
+            { id: 3, judul: "Interstellar", genre: "Sci-Fi", rating: 8.6, poster: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400", sinopsis: "Sebuah tim penjelajah melakukan perjalanan melintasi lubang cacing di luar angkasa dalam upaya memastikan kelangsungan hidup umat manusia." },
+            { id: 4, judul: "The Shawshank Redemption", genre: "Drama", rating: 9.3, poster: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400", sinopsis: "Dua pria yang dipenjara menjalin persahabatan selama bertahun-tahun, menemukan pelipur lara dan penebusan akhirnya melalui tindakan yang menunjukkan rasa kemanusiaan." },
+            { id: 5, judul: "The Conjuring", genre: "Horor", rating: 7.5, poster: "https://images.unsplash.com/photo-1505635552518-3448ff116af3?w=400", sinopsis: "Penyelidik paranormal Ed dan Lorraine Warren bekerja untuk membantu keluarga yang mengalami peristiwa menakutkan di rumah pertanian mereka." },
+            { id: 6, judul: "Avenger: Endgame", genre: "Action", rating: 8.4, poster: "https://images.unsplash.com/photo-1569003339405-ea396a5a8a90?w=400", sinopsis: "Setelah peristiwa مدمر dari Avengers: Infinity War, alam semesta hancur. Dengan bantuan sekutu yang tersisa, Avengers berkumpul sekali lagi untuk membalikkan tindakan Thanos." }
+        ];
+
+        // 2. Prosedur Menampilkan Film ke Grid HTML
+        function tampilkanFilm(daftarFilm) {
+            const grid = document.getElementById('movieGrid');
+            grid.innerHTML = ''; // Kosongkan grid terlebih dahulu
+
+            if(daftarFilm.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Maaf, film tidak ditemukan.</p>`;
+                return;
+            }
+
+            daftarFilm.forEach(film => {
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.setAttribute('onclick', `tampilkanDetailFilm(${film.id})`);
+                
+                card.innerHTML = `
+                    <img src="${film.poster}" alt="${film.judul}" class="movie-poster">
+                    <div class="movie-info">
+                        <div class="movie-title">${film.judul}</div>
+                        <div class="movie-meta">
+                            <span>${film.genre}</span>
+                            <span class="rating">⭐ ${film.rating}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 3. Prosedur Logika Cari Film (Search Bar)
+        function cariFilm() {
+            const kataKunci = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Reset active button di filter genre ke "Semua"
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            buttons[0].classList.add('active');
+
+            const hasilCari = KUMPULAN_FILM.filter(film => 
+                film.judul.toLowerCase().includes(kataKunci) || 
+                film.genre.toLowerCase().includes(kataKunci)
+            );
+            
+            document.getElementById('gridTitle').innerText = kataKunci ? `Hasil Pencarian: "${kataKunci}"` : "Rekomendasi Film Terpopuler";
+            tampilkanFilm(hasilCari);
+        }
+
+        // 4. Prosedur Logika Filter Genre
+        function filterGenre(genreDipilih, elemenTombol) {
+            // Kosongkan search input saat filter diklik
+            document.getElementById('searchInput').value = '';
+
+            // Mengatur class active tombol UI
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            elemenTombol.classList.add('active');
+
+            // Logika filter data
+            if (genreDipilih === 'Semua') {
+                document.getElementById('gridTitle').innerText = "Rekomendasi Film Terpopuler";
+                tampilkanFilm(KUMPULAN_FILM);
+            } else {
+                document.getElementById('gridTitle').innerText = `Genre: ${genreDipilih}`;
+                const hasilFilter = KUMPULAN_FILM.filter(film => film.genre === genreDipilih);
+                tampilkanFilm(hasilFilter);
+            }
+        }
+
+        // 5. Prosedur Logika Pop-Up Detail Film (Modal)
+        function tampilkanDetailFilm(filmId) {
+            const film = KUMPULAN_FILM.find(f => f.id === filmId);
+            if(!film) return;
+
+            document.getElementById('modalPoster').src = film.poster;
+            document.getElementById('modalTitle').innerText = film.judul;
+            document.getElementById('modalGenre').innerText = film.genre;
+            document.getElementById('modalSynopsis').innerText = film.sinopsis;
+            document.getElementById('modalRating').innerText = `⭐ ${film.rating} / 10`;
+
+            const modal = document.getElementById('movieModal');
+            modal.classList.add('show');
+        }
+
+        // Penutup Modal jika klik di luar box putih
+        function tutupModal(event) {
+            const modal = document.getElementById('movieModal');
+            if (event.target === modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        // Jalankan fungsi tampilkan pertama kali saat web dibuka
+        window.onload = function() {
+            tampilkanFilm(KUMPULAN_FILM);
+        };
+    </script>
+</body>
+</html>
